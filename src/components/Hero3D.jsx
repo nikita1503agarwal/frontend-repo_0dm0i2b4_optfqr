@@ -1,7 +1,61 @@
 import Spline from '@splinetool/react-spline'
 import { motion } from 'framer-motion'
+import { useMemo } from 'react'
+import React from 'react'
+
+class SplineErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error, info) {
+    // eslint-disable-next-line no-console
+    console.warn('Spline failed to load, showing fallback.', { error, info })
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+    return this.props.children
+  }
+}
 
 export default function Hero3D() {
+  const sceneUrl = useMemo(() => {
+    // Configure a public Spline scene URL in .env as VITE_SPLINE_SCENE_URL
+    // If not set (or fails), we show a graceful animated fallback
+    return import.meta.env.VITE_SPLINE_SCENE_URL || ''
+  }, [])
+
+  const Fallback = (
+    <div className="relative h-full w-full">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-cyan-400/10 to-indigo-500/20" />
+      <motion.div
+        className="absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-blue-500/30 blur-3xl"
+        animate={{
+          scale: [1, 1.05, 1],
+          opacity: [0.4, 0.6, 0.4],
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute -bottom-10 right-10 w-72 h-72 rounded-full bg-cyan-400/30 blur-2xl"
+        animate={{ y: [0, -12, 0], x: [0, 8, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/80 backdrop-blur">
+          3D preview
+          <span className="mx-2">·</span>
+          Add VITE_SPLINE_SCENE_URL to enable Spline
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <section className="relative overflow-hidden pt-28">
       <div className="absolute inset-0 -z-10">
@@ -41,8 +95,13 @@ export default function Hero3D() {
           </div>
 
           <div className="relative h-[420px] rounded-2xl overflow-hidden ring-1 ring-white/10 bg-slate-800/30">
-            {/* Replace with your Spline scene URL for a custom 3D animation */}
-            <Spline scene="https://prod.spline.design/B2n4iK1kQ7s0e3m3/scene.splinecode" />
+            {sceneUrl ? (
+              <SplineErrorBoundary fallback={Fallback}>
+                <Spline scene={sceneUrl} />
+              </SplineErrorBoundary>
+            ) : (
+              Fallback
+            )}
           </div>
         </div>
       </div>
